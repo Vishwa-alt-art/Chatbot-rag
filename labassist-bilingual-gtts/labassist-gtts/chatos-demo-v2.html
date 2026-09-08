@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ChatOS v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--surface3:#21262d;
+  --border:#30363d;--border2:#444c56;
+  --blue:#58a6ff;--blue-dim:#1f3a5f;
+  --green:#3fb950;--green-dim:#1a3a2a;
+  --purple:#bc8cff;--purple-dim:#2d1f52;
+  --amber:#e3b341;--amber-dim:#3d2e0a;
+  --coral:#ff7b72;--coral-dim:#3d1a18;
+  --cyan:#79c0ff;--text:#e6edf3;--text2:#8b949e;--text3:#656d76;
+  --radius:8px;--radius-sm:5px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+
+/* TOP BAR */
+.topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:50;position:relative}
+.logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:14px;color:var(--text);white-space:nowrap}
+.logo-icon{width:26px;height:26px;background:linear-gradient(135deg,#58a6ff,#bc8cff);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+
+/* GLOBAL SEARCH */
+.global-search-wrap{flex:1;max-width:560px;position:relative}
+.gsearch-box{display:flex;align-items:center;background:var(--surface3);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s}
+.gsearch-box:focus-within{border-color:var(--blue)}
+.gsearch-icon{padding:0 10px;color:var(--text3);font-size:14px;flex-shrink:0}
+.gsearch-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:12px;padding:7px 0;min-width:0}
+.gsearch-input::placeholder{color:var(--text3)}
+.gsearch-divider{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
+.date-filter-btn{padding:4px 10px;background:transparent;border:none;color:var(--text2);font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.date-filter-btn:hover{color:var(--text)}
+.date-filter-btn.active{color:var(--amber)}
+.semantic-badge{padding:3px 8px;background:var(--purple-dim);color:var(--purple);font-size:10px;font-weight:600;border-radius:0;white-space:nowrap;border-left:1px solid var(--border)}
+
+/* DATE FILTER DROPDOWN */
+.date-dropdown{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px;z-index:200;width:420px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none}
+.date-dropdown.show{display:block}
+.dd-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.dd-quick{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.dd-chip{padding:4px 10px;background:var(--surface3);border:1px solid var(--border);border-radius:16px;font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s}
+.dd-chip:hover,.dd-chip.sel{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.dd-custom{display:flex;gap:6px;align-items:center}
+.dd-custom input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:11px;outline:none}
+.dd-custom input:focus{border-color:var(--amber)}
+.dd-custom button{background:var(--amber);color:#0d1117;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.dd-clear{margin-top:8px;width:100%;background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px;font-size:11px;color:var(--text3);cursor:pointer}
+.dd-clear:hover{color:var(--coral);border-color:var(--coral)}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:288px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.account-tabs{display:flex;gap:2px;padding:10px 10px 0;flex-wrap:wrap}
+.tab{padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;border:1px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--surface3)}
+.tab.active{background:var(--blue-dim);color:var(--blue);border-color:var(--blue)}
+.sidebar-header{padding:10px 12px 6px;display:flex;align-items:center;justify-content:space-between}
+.sidebar-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.chat-count{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:8px}
+.active-filters{padding:0 10px 6px;display:flex;gap:4px;flex-wrap:wrap;min-height:0}
+.filter-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:12px;font-size:10px;color:var(--amber)}
+.filter-tag button{background:none;border:none;color:var(--amber);cursor:pointer;font-size:11px;padding:0;line-height:1}
+.chat-list{flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.chat-list::-webkit-scrollbar{width:3px}
+.chat-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* CHAT CARD */
+.chat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 11px;cursor:pointer;transition:all .15s}
+.chat-card:hover{border-color:var(--border2);background:var(--surface3)}
+.chat-card.active{border-color:var(--blue);background:var(--blue-dim)}
+.chat-card.hidden{display:none}
+.chat-card.highlighted{border-color:var(--purple);background:var(--purple-dim)}
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.acct-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.3px}
+.badge-work{background:#1f3a2a;color:#3fb950}
+.badge-personal{background:#1f3a5f;color:#58a6ff}
+.badge-study{background:#2d1f52;color:#bc8cff}
+.card-date{font-size:10px;color:var(--text3)}
+.card-summary{font-size:12px;color:var(--text);margin-bottom:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dna-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+.dna-pill{font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;white-space:nowrap}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.intent-tag{font-size:10px;color:var(--text3)}
+.no-results{padding:24px 16px;text-align:center;color:var(--text3);font-size:12px;display:none}
+.no-results .icon{font-size:28px;margin-bottom:8px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.nudge{background:linear-gradient(90deg,var(--amber-dim),#2a240a);border-bottom:1px solid var(--amber);padding:7px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.nudge-text{flex:1;font-size:12px;color:var(--amber)}
+.nudge-text span{font-weight:600}
+.nudge-btn{background:var(--amber);color:#0d1117;border:none;border-radius:5px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.nudge-dismiss{background:transparent;border:1px solid var(--amber);color:var(--amber);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+
+/* IN-CHAT SEARCH BAR */
+.inchat-search-bar{background:var(--surface2);border-bottom:1px solid var(--border);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ics-wrap{flex:1;display:flex;align-items:center;background:var(--surface3);border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .2s}
+.ics-wrap:focus-within{border-color:var(--green)}
+.ics-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:12px;padding:6px 10px}
+.ics-wrap input::placeholder{color:var(--text3)}
+.ics-icon{padding:0 8px;color:var(--text3);font-size:13px}
+.ics-nav{display:flex;align-items:center;gap:4px}
+.ics-nav button{background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.ics-nav button:hover{border-color:var(--green);color:var(--green)}
+.ics-count{font-size:11px;color:var(--text3);white-space:nowrap;min-width:48px;text-align:center}
+.ics-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px}
+.ics-close:hover{color:var(--coral)}
+
+/* MEMORY SEARCH PANEL */
+.memory-panel{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 14px;flex-shrink:0;display:none}
+.memory-panel.show{display:block}
+.mp-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mp-input-row{display:flex;gap:6px;margin-bottom:8px}
+.mp-input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;outline:none}
+.mp-input:focus{border-color:var(--purple)}
+.mp-search-btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+.mp-results{display:flex;flex-direction:column;gap:4px}
+.mp-result{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;cursor:pointer;transition:all .15s}
+.mp-result:hover{border-color:var(--purple)}
+.mp-result-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mp-result-match{font-size:11px;color:var(--purple)}
+.mp-result-meta{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* CHAT PANEL */
+.chat-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.chat-title{font-size:13px;font-weight:600;color:var(--text)}
+.chat-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.header-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.hdr-btn{background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .15s}
+.hdr-btn:hover{border-color:var(--border2);color:var(--text)}
+.hdr-btn.active-btn{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.save-btn{background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#0d1117;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.msg{display:flex;gap:10px}
+.msg.bot{align-items:flex-start}
+.msg.user{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.msg-row{display:flex;gap:10px}
+.msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px}
+.avatar-claude{background:linear-gradient(135deg,#58a6ff,#bc8cff)}
+.avatar-user{background:linear-gradient(135deg,#3fb950,#39d353)}
+.bubble{border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.6;max-width:82%}
+.bot .bubble{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-top-left-radius:3px}
+.user .bubble{background:var(--blue-dim);border:1px solid var(--blue);color:var(--text);border-top-right-radius:3px}
+.bubble code{background:var(--surface3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'Courier New',monospace;font-size:11px;color:var(--cyan)}
+.bubble pre{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px;overflow-x:auto;font-family:'Courier New',monospace;font-size:11px;color:var(--cyan);line-height:1.5}
+.msg-highlight .bubble{border-color:var(--green)!important;box-shadow:0 0 0 2px rgba(63,185,80,.2)}
+
+/* VERSION CHIP (on bot code messages) */
+.version-chip{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;background:var(--purple-dim);color:var(--purple);border:1px solid var(--purple);border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;width:fit-content;transition:all .15s}
+.version-chip:hover{background:var(--purple);color:#fff}
+.version-chip.flash{animation:chipFlash 1s ease}
+@keyframes chipFlash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 3px rgba(188,140,255,.45)}}
+
+/* INTENT CHIPS (on user messages) */
+.intent-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:600;width:fit-content}
+.intent-bug{background:var(--coral-dim);color:var(--coral);border:1px solid var(--coral)}
+.intent-revert{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber)}
+.intent-new{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+
+/* SIDEBAR REVISION BADGE (reuses dna-pill base) */
+.revision-badge{background:var(--purple-dim)!important;color:var(--purple)!important}
+
+/* INPUT */
+.chat-input-area{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0}
+.input-row{display:flex;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:7px 12px;transition:border-color .2s}
+.input-row:focus-within{border-color:var(--blue)}
+.input-row input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px}
+.input-row input::placeholder{color:var(--text3)}
+.send-btn{background:var(--blue);border:none;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0}
+
+/* CODE CANVAS PANEL */
+.canvas-count-badge{background:rgba(255,255,255,.12);border-radius:8px;padding:0 5px;font-size:9px;font-weight:700;margin-left:2px}
+.canvas-panel{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);border-left:1px solid var(--border2);transform:translateX(100%);transition:transform .25s ease;z-index:80;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.45)}
+.canvas-panel.show{transform:translateX(0)}
+.canvas-header{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.canvas-title{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;min-width:0}
+.canvas-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.canvas-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;flex-shrink:0}
+.canvas-versions{display:flex;flex-direction:column;gap:5px;padding:10px;border-bottom:1px solid var(--border);max-height:200px;overflow-y:auto;flex-shrink:0}
+.canvas-version-item{display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .15s}
+.canvas-version-item:hover{border-color:var(--border2)}
+.canvas-version-item.active{border-color:var(--purple);background:var(--purple-dim)}
+.canvas-version-item.flash{animation:canvasFlash 1s ease}
+@keyframes canvasFlash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 2px var(--purple)}}
+.cv-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;color:var(--text)}
+.cv-summary{font-size:10px;color:var(--text2);line-height:1.4}
+.canvas-code-wrap{flex:1;overflow-y:auto;padding:10px}
+.canvas-code-meta{font-size:10px;color:var(--text3);margin-bottom:6px}
+.canvas-code{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:'Courier New',monospace;font-size:11px;color:var(--cyan);line-height:1.5;white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+.canvas-empty{padding:14px;font-size:11px;color:var(--text3);text-align:center}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:420px;padding:20px;position:relative;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
+.modal-sub{font-size:11px;color:var(--text3);margin-bottom:14px}
+.modal-section{margin-bottom:12px}
+.modal-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.tag-cloud{display:flex;gap:5px;flex-wrap:wrap}
+.auto-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.modal-summary{background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;color:var(--text2);line-height:1.5}
+.modal-select{width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:12px;outline:none;margin-bottom:6px}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.modal-save{flex:1;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#0d1117;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
+.modal-cancel{background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer}
+.modal-close{position:absolute;right:14px;top:14px;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer}
+
+mark{background:rgba(188,140,255,.25);color:var(--purple);border-radius:2px;padding:0 2px}
+mark.green-mark{background:rgba(63,185,80,.25);color:var(--green)}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing-indicator span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:blink 1.2s infinite}
+.typing-indicator span:nth-child(2){animation-delay:.2s}
+.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── PORTABLE MEMORY TOKEN ───────────────────────────── */
+.token-nudge{background:linear-gradient(90deg,var(--purple-dim),#241a3d);border-bottom:1px solid var(--purple);padding:7px 16px;display:none;align-items:center;gap:10px;flex-shrink:0}
+.token-nudge.show{display:flex}
+.token-nudge-text{flex:1;font-size:12px;color:var(--purple)}
+.token-nudge-text span{font-weight:600}
+.token-nudge-btn{background:var(--purple);color:#fff;border:none;border-radius:5px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.token-nudge-dismiss{background:transparent;border:1px solid var(--purple);color:var(--purple);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+
+.token-modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:460px;padding:20px;position:relative;max-height:90vh;overflow-y:auto}
+.token-modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:7px}
+.token-modal-sub{font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+.token-facts-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.token-facts{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.token-fact{display:flex;align-items:flex-start;gap:7px;background:var(--surface3);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;color:var(--text2);line-height:1.45}
+.token-fact .tf-icon{flex-shrink:0;margin-top:1px}
+.token-box-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.token-box{background:var(--surface3);border:1px dashed var(--purple);border-radius:8px;padding:10px 12px;font-family:'Courier New',monospace;font-size:11px;color:var(--purple);word-break:break-all;margin-bottom:12px;line-height:1.5}
+.token-actions{display:flex;gap:8px}
+.token-copy-btn{flex:1;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#0d1117;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer}
+.token-share-note{margin-top:12px;font-size:11px;color:var(--text3);line-height:1.5;background:var(--surface2);border-left:2px solid var(--purple);padding:8px 10px;border-radius:0 6px 6px 0}
+.token-modal-close{position:absolute;right:14px;top:14px;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer}
+
+/* paste-token entry row, shown inside a fresh/empty chat */
+.paste-token-row{display:none;flex-direction:column;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.paste-token-row.show{display:flex}
+.ptr-label{font-size:11px;font-weight:600;color:var(--purple);display:flex;align-items:center;gap:6px}
+.ptr-input-row{display:flex;gap:6px}
+.ptr-input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:11px;font-family:'Courier New',monospace;outline:none}
+.ptr-input:focus{border-color:var(--purple)}
+.ptr-apply-btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.context-loaded-banner{display:none;align-items:center;gap:8px;padding:8px 14px;background:var(--purple-dim);border-bottom:1px solid var(--purple);font-size:11.5px;color:var(--purple)}
+.context-loaded-banner.show{display:flex}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">⚡</div>ChatOS</div>
+
+  <div class="global-search-wrap">
+    <div class="gsearch-box">
+      <span class="gsearch-icon">🔍</span>
+      <input id="gsearch" type="text" class="gsearch-input" placeholder="Search conversations by keyword, topic, account…" oninput="handleGlobalSearch(this.value)" onfocus="closeDropdown()"/>
+      <div class="gsearch-divider"></div>
+      <button class="date-filter-btn" id="date-filter-btn" onclick="toggleDateDropdown()">📅 Date <span id="date-btn-label"></span></button>
+      <span class="semantic-badge">✦ Semantic</span>
+    </div>
+
+    <!-- DATE FILTER DROPDOWN -->
+    <div class="date-dropdown" id="date-dropdown">
+      <div class="dd-title">Filter by time</div>
+      <div class="dd-quick">
+        <div class="dd-chip" onclick="applyDateFilter('today',this)">Today</div>
+        <div class="dd-chip" onclick="applyDateFilter('yesterday',this)">Yesterday</div>
+        <div class="dd-chip" onclick="applyDateFilter('week',this)">Last 7 days</div>
+        <div class="dd-chip" onclick="applyDateFilter('month',this)">Last 30 days</div>
+        <div class="dd-chip" onclick="applyDateFilter('jun9',this)">Jun 9</div>
+        <div class="dd-chip" onclick="applyDateFilter('jun7',this)">Jun 7</div>
+        <div class="dd-chip" onclick="applyDateFilter('jun5',this)">Jun 5</div>
+      </div>
+      <div class="dd-title">Custom date or time</div>
+      <div class="dd-custom">
+        <input type="text" id="custom-date-input" placeholder='e.g. "Jun 10" or "5:45 PM" or "last week"'/>
+        <button onclick="applyCustomDate()">Search</button>
+      </div>
+      <button class="dd-clear" onclick="clearDateFilter()">✕ Clear date filter</button>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <button class="hdr-btn" onclick="toggleMemoryPanel()" id="memory-toggle-btn" title="Search by memory">🧠 Memory Search</button>
+    <div style="font-size:11px;color:var(--text3)">Kai M.</div>
+    <div class="avatar">KM</div>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="account-tabs">
+    <div class="tab active" onclick="filterTab('all',this)">All</div>
+    <div class="tab" onclick="filterTab('work',this)">Kai-work</div>
+    <div class="tab" onclick="filterTab('personal',this)">Kai-personal</div>
+    <div class="tab" onclick="filterTab('study',this)">Kai-study</div>
+  </div>
+  <div class="sidebar-header">
+    <span class="sidebar-title">Conversations</span>
+    <span class="chat-count" id="chat-count">8 chats</span>
+  </div>
+  <div class="active-filters" id="active-filters"></div>
+  <div class="chat-list" id="chat-list">
+
+    <div class="chat-card active" data-account="work" data-keywords="rag pipeline flask chroma langchain vector groq langraph self healing" data-date="today" data-ts="2024-06-15" onclick="loadChat(0)">
+      <div class="card-top"><span class="acct-badge badge-work">Kai-work</span><span class="card-date">Today, 2:14 PM</span></div>
+      <div class="card-summary">Built a self-healing RAG pipeline with Flask + ChromaDB. Debugged chunk retrieval and fallback logic.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">RAG</span>
+        <span class="dna-pill" style="background:#1a3a2a;color:#3fb950">Flask</span>
+        <span class="dna-pill" style="background:#2d1f52;color:#bc8cff">ChromaDB</span>
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">LangGraph</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">🛠 debugging</span></div>
+    </div>
+
+    <div class="chat-card" data-account="work" data-keywords="labassist tts latency audio sarvam flask chunked streaming" data-date="yesterday" data-ts="2024-06-14" onclick="loadChat(1)">
+      <div class="card-top"><span class="acct-badge badge-work">Kai-work</span><span class="card-date">Yesterday, 11:40 AM</span></div>
+      <div class="card-summary">Fixed TTS audio latency in LabAssist using chunked parallel fetching and persistent requests.Session().</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#1a3a2a;color:#3fb950">Flask</span>
+        <span class="dna-pill" style="background:#3d1a18;color:#ff7b72">TTS</span>
+        <span class="dna-pill" style="background:#1f3a2a;color:#39d353">Sarvam AI</span>
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">latency</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">🛠 debugging</span></div>
+    </div>
+
+    <div class="chat-card" data-account="work" data-keywords="resume ats job prep ai developer portfolio neural arc pantech" data-date="jun12" data-ts="2024-06-12" onclick="loadChat(2)">
+      <div class="card-top"><span class="acct-badge badge-work">Kai-work</span><span class="card-date">Jun 12, 9:00 AM</span></div>
+      <div class="card-summary">Drafted ATS-friendly resume for AI Developer roles. Tailored experience bullets for Neural Arc internship.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">Resume</span>
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">ATS</span>
+        <span class="dna-pill" style="background:#2d1f52;color:#bc8cff">Job prep</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">📝 job prep</span></div>
+    </div>
+
+    <div class="chat-card" data-account="work" data-keywords="node express postgresql ethara assessment task manager render deploy" data-date="jun10" data-ts="2024-06-10" onclick="loadChat(3)">
+      <div class="card-top"><span class="acct-badge badge-work">Kai-work</span><span class="card-date">Jun 10, 4:22 PM</span></div>
+      <div class="card-summary">Built Team Task Manager for Ethara AI assessment — Node.js, Express, PostgreSQL, deployed on Render.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#1a3a2a;color:#3fb950">Node.js</span>
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">PostgreSQL</span>
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">Render</span>
+        <span class="dna-pill" style="background:#3d1a18;color:#ff7b72">Express</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">🏗 building</span></div>
+    </div>
+
+    <div class="chat-card" data-account="study" data-keywords="interview prep system design ml questions vector db embedding" data-date="jun9" data-ts="2024-06-09" onclick="loadChat(4)">
+      <div class="card-top"><span class="acct-badge badge-study">Kai-study</span><span class="card-date">Jun 9, 7:30 PM</span></div>
+      <div class="card-summary">Practiced ML system design questions — RAG architecture, vector DB trade-offs, embedding strategies.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#2d1f52;color:#bc8cff">System design</span>
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">ML</span>
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">Interview</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">🎯 interview prep</span></div>
+    </div>
+
+    <div class="chat-card" data-account="personal" data-keywords="trip planning budget travel ooty itinerary stay hotel" data-date="jun8" data-ts="2024-06-08" onclick="loadChat(5)">
+      <div class="card-top"><span class="acct-badge badge-personal">Kai-personal</span><span class="card-date">Jun 8, 8:15 PM</span></div>
+      <div class="card-summary">Planned a 5-day Ooty trip with budget breakdown, stay options, and day-wise itinerary.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">Travel</span>
+        <span class="dna-pill" style="background:#1a3a2a;color:#3fb950">Budget</span>
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">Itinerary</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">💡 planning</span></div>
+    </div>
+
+    <div class="chat-card" data-account="study" data-keywords="python langchain agent tool calling llm react openai functions" data-date="jun7" data-ts="2024-06-07" onclick="loadChat(6)">
+      <div class="card-top"><span class="acct-badge badge-study">Kai-study</span><span class="card-date">Jun 7, 3:00 PM</span></div>
+      <div class="card-summary">Explored LangChain agent tool-calling patterns — ReAct vs OpenAI functions, custom tool schemas.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#1a3a2a;color:#3fb950">Python</span>
+        <span class="dna-pill" style="background:#3d2e0a;color:#e3b341">LangChain</span>
+        <span class="dna-pill" style="background:#2d1f52;color:#bc8cff">Agents</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">📚 learning</span></div>
+    </div>
+
+    <div class="chat-card" data-account="personal" data-keywords="speech emotion nlp cnn classification project feature extraction mfcc" data-date="jun5" data-ts="2024-06-05" onclick="loadChat(7)">
+      <div class="card-top"><span class="acct-badge badge-personal">Kai-personal</span><span class="card-date">Jun 5, 5:45 PM</span></div>
+      <div class="card-summary">Designed speech emotion analysis pipeline using NLP + CNN. Discussed feature extraction and dataset choices.</div>
+      <div class="dna-bar">
+        <span class="dna-pill" style="background:#3d1a18;color:#ff7b72">NLP</span>
+        <span class="dna-pill" style="background:#1f3a5f;color:#58a6ff">CNN</span>
+        <span class="dna-pill" style="background:#2d1f52;color:#bc8cff">Portfolio</span>
+      </div>
+      <div class="card-footer"><span class="intent-tag">💡 brainstorming</span></div>
+    </div>
+
+  </div>
+  <div class="no-results" id="no-results"><div class="icon">🔭</div>No conversations match.<br/>Try different keywords or date.</div>
+</div>
+
+<!-- MAIN PANEL -->
+<div class="main">
+
+  <!-- NUDGE -->
+  <div class="nudge" id="nudge">
+    <span>⚡</span>
+    <div class="nudge-text">Yesterday you were working on <span>LabAssist TTS latency</span> · Kai-work — Resume?</div>
+    <button class="nudge-btn" onclick="resumeChat()">Resume</button>
+    <button class="nudge-dismiss" onclick="document.getElementById('nudge').style.display='none'">Dismiss</button>
+  </div>
+
+  <!-- LONG CHAT → SUGGEST NEW CHAT + TOKEN -->
+  <div class="token-nudge" id="token-nudge">
+    <span>🧬</span>
+    <div class="token-nudge-text">This chat is getting long — <span>start a new chat</span>? I've kept a memory token so you won't lose context.</div>
+    <button class="token-nudge-btn" onclick="openTokenModal()">Get my token</button>
+    <button class="token-nudge-dismiss" onclick="dismissTokenNudge()">Keep going</button>
+  </div>
+
+  <!-- PASTE-TOKEN ROW (shown on a fresh chat) -->
+  <div class="paste-token-row" id="paste-token-row">
+    <div class="ptr-label">🧬 Have a context token from another chat?</div>
+    <div class="ptr-input-row">
+      <input class="ptr-input" id="ptr-input" placeholder="Paste your MEM-TOKEN here…"/>
+      <button class="ptr-apply-btn" onclick="applyPastedToken()">Continue from here</button>
+    </div>
+  </div>
+
+  <!-- CONTEXT LOADED CONFIRMATION -->
+  <div class="context-loaded-banner" id="context-loaded-banner">
+    <span>✅</span>
+    <span id="context-loaded-text">Context loaded — picking up where that conversation left off.</span>
+  </div>
+
+  <!-- MEMORY SEARCH PANEL -->
+  <div class="memory-panel" id="memory-panel">
+    <div class="mp-title">🧠 Search by what you remember</div>
+    <div class="mp-input-row">
+      <input class="mp-input" id="memory-input" placeholder='e.g. "that chat where we fixed audio delay" or "resume with neural arc bullets"' onkeydown="if(event.key==='Enter')runMemorySearch()"/>
+      <button class="mp-search-btn" onclick="runMemorySearch()">Find it</button>
+    </div>
+    <div class="mp-results" id="mp-results"></div>
+  </div>
+
+  <!-- IN-CHAT SEARCH -->
+  <div class="inchat-search-bar" id="inchat-bar" style="display:none">
+    <div class="ics-wrap">
+      <span class="ics-icon">🔍</span>
+      <input type="text" id="ics-input" placeholder="Search inside this conversation…" oninput="searchInChat(this.value)"/>
+    </div>
+    <div class="ics-nav">
+      <button onclick="navMatch(-1)">▲</button>
+      <span class="ics-count" id="ics-count">0 / 0</span>
+      <button onclick="navMatch(1)">▼</button>
+    </div>
+    <button class="ics-close" onclick="closeInChatSearch()">✕</button>
+  </div>
+
+  <!-- CHAT PANEL -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div style="min-width:0">
+        <div class="chat-title" id="chat-title">Self-Healing RAG Pipeline — Flask + ChromaDB</div>
+        <div class="chat-meta" id="chat-meta">Kai-work · Today, 2:14 PM · 🛠 debugging</div>
+      </div>
+      <div class="header-actions">
+        <button class="hdr-btn" id="canvas-toggle" onclick="toggleCanvas()">📄 Canvas<span class="canvas-count-badge" id="canvas-count-badge">3</span></button>
+        <button class="hdr-btn" id="ics-toggle" onclick="toggleInChatSearch()">🔍 Search in chat</button>
+        <button class="save-btn" onclick="openModal()">💾 Save &amp; Tag</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg bot"><div class="msg-avatar avatar-claude">C</div><div class="bubble">Hi Kai! Ready to help. What are you working on today?</div></div>
+
+      <div class="msg user">
+        <div class="msg-row"><div class="msg-avatar avatar-user">K</div><div class="bubble">I'm building a self-healing RAG pipeline. When retrieval confidence is below a threshold, I want the system to automatically re-query with an expanded context window. Using Flask + ChromaDB + Groq.</div></div>
+        <div class="intent-chip intent-new">➕ new topic</div>
+      </div>
+
+      <div class="msg bot"><div class="msg-avatar avatar-claude">C</div><div class="bubble">That's a solid architecture. Here's the core self-healing loop in LangGraph — when the retriever scores drop below your threshold, we reroute to an expansion node:<pre>def should_requery(state):
+    if state["confidence"] &lt; 0.65:
+        return "expand_query"
+    return "generate"
+
+graph.add_conditional_edges(
+    "retrieve", should_requery
+)</pre>You can compute <code>confidence</code> from the cosine similarity scores ChromaDB returns. Want me to show the full node logic?<div class="version-chip" onclick="openCanvasVersion(0,1)">🔄 v1</div></div></div>
+
+      <div class="msg user">
+        <div class="msg-row"><div class="msg-avatar avatar-user">K</div><div class="bubble">Yes, also how do I pass the expanded query back through the retriever without duplicating documents?</div></div>
+      </div>
+
+      <div class="msg bot"><div class="msg-avatar avatar-claude">C</div><div class="bubble">Use a <code>seen_ids</code> set in your graph state and filter out already-retrieved chunks before merging:<pre>def expand_query_node(state):
+    expanded = rephrase_query(state["query"])
+    new_docs = retriever.get_relevant_documents(expanded)
+    fresh = [d for d in new_docs
+             if d.metadata["id"] not in state["seen_ids"]]
+    state["seen_ids"].update(d.metadata["id"] for d in fresh)
+    state["docs"] += fresh
+    return state</pre>This gives you clean deduplication without a second DB call.<div class="version-chip" onclick="openCanvasVersion(0,2)">🔄 v2</div></div></div>
+
+      <div class="msg user">
+        <div class="msg-row"><div class="msg-avatar avatar-user">K</div><div class="bubble">How do I expose this as a Flask endpoint with streaming?</div></div>
+      </div>
+
+      <div class="msg bot"><div class="msg-avatar avatar-claude">C</div><div class="bubble">Use Flask's <code>Response</code> with <code>stream_with_context</code>:<pre>from flask import Response, stream_with_context
+
+@app.route("/query", methods=["POST"])
+def query():
+    data = request.json
+    def generate():
+        for chunk in graph.stream({"query": data["q"]}):
+            yield f"data: {chunk}\n\n"
+    return Response(stream_with_context(generate()),
+                    mimetype="text/event-stream")</pre>Stream each graph node's output as SSE. On the frontend, hook into <code>EventSource</code> to display tokens as they arrive.<div class="version-chip" onclick="openCanvasVersion(0,3)">🔄 v3</div></div></div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="input-row">
+        <input type="text" id="msg-input" placeholder="Continue this conversation…" onkeydown="if(event.key==='Enter')sendMsg()"/>
+        <button class="send-btn" onclick="sendMsg()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE CANVAS PANEL -->
+  <div class="canvas-panel" id="canvas-panel">
+    <div class="canvas-header">
+      <div class="canvas-title">📄 <span id="canvas-name">—</span></div>
+      <button class="canvas-close" onclick="closeCanvas()">✕</button>
+    </div>
+    <div class="canvas-versions" id="canvas-versions"></div>
+    <div class="canvas-code-wrap">
+      <div class="canvas-code-meta" id="canvas-code-meta"></div>
+      <pre class="canvas-code" id="canvas-code"></pre>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title">💾 Save &amp; Tag Conversation</div>
+    <div class="modal-sub">ChatOS auto-generated tags and summary. Review and confirm.</div>
+    <div class="modal-section">
+      <div class="modal-label">Auto-generated tags</div>
+      <div class="tag-cloud">
+        <span class="auto-tag selected" style="background:#1f3a5f;color:#58a6ff;border-color:#58a6ff" onclick="toggleTag(this)">RAG</span>
+        <span class="auto-tag selected" style="background:#1a3a2a;color:#3fb950;border-color:#3fb950" onclick="toggleTag(this)">Flask</span>
+        <span class="auto-tag selected" style="background:#2d1f52;color:#bc8cff;border-color:#bc8cff" onclick="toggleTag(this)">ChromaDB</span>
+        <span class="auto-tag selected" style="background:#3d2e0a;color:#e3b341;border-color:#e3b341" onclick="toggleTag(this)">LangGraph</span>
+        <span class="auto-tag selected" style="background:#3d1a18;color:#ff7b72;border-color:#ff7b72" onclick="toggleTag(this)">streaming</span>
+        <span class="auto-tag unselected" style="background:#1f3a5f;color:#79c0ff;border-color:#444c56" onclick="toggleTag(this)">Groq</span>
+        <span class="auto-tag unselected" style="background:#1a3a2a;color:#39d353;border-color:#444c56" onclick="toggleTag(this)">deduplication</span>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-label">Auto-summary</div>
+      <div class="modal-summary">Built a self-healing RAG pipeline using LangGraph with conditional re-query logic when confidence drops below 0.65. Implemented chunk deduplication via <code>seen_ids</code> set. Exposed via Flask SSE streaming endpoint.</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-label">Save to account</div>
+      <select class="modal-select"><option>Kai-work</option><option>Kai-personal</option><option>Kai-study</option></select>
+    </div>
+    <div class="modal-section">
+      <div class="modal-label">Intent</div>
+      <select class="modal-select"><option>🛠 debugging</option><option>💡 brainstorming</option><option>📝 job prep</option><option>🏗 building</option><option>📚 learning</option><option>🎯 interview prep</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveConversation()">✓ Save Conversation</button>
+    </div>
+  </div>
+</div>
+
+<!-- PORTABLE MEMORY TOKEN MODAL -->
+<div class="modal-overlay" id="token-modal">
+  <div class="token-modal">
+    <button class="token-modal-close" onclick="closeTokenModal()">✕</button>
+    <div class="token-modal-title">🧬 <span>Context Token</span></div>
+    <div class="token-modal-sub">ChatOS has been quietly extracting structured facts from this conversation — not the raw chat, just what matters. Take this token into a new chat, or share it with someone else so they can continue from here too.</div>
+
+    <div class="token-facts-label">What's packed into this token</div>
+    <div class="token-facts" id="token-facts"></div>
+
+    <div class="token-box-label">Your portable token</div>
+    <div class="token-box" id="token-box">MEM-7f3a1c · 5 facts · generating…</div>
+
+    <div class="token-actions">
+      <button class="token-copy-btn" id="token-copy-btn" onclick="copyToken()">📋 Copy token</button>
+    </div>
+
+    <div class="token-share-note">💡 Anyone you share this with — a doctor, a teammate, a family member — can paste it into their own new chat and <strong>continue the conversation themselves</strong>: ask new questions, get answers grounded in everything that happened here. Not a transcript dump — a continuable conversation.</div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const chats=[
+  {title:"Self-Healing RAG Pipeline — Flask + ChromaDB",meta:"Kai-work · Today, 2:14 PM · 🛠 debugging"},
+  {title:"LabAssist TTS Latency Fix — Sarvam + Flask",meta:"Kai-work · Yesterday, 11:40 AM · 🛠 debugging"},
+  {title:"ATS Resume for AI Developer Roles",meta:"Kai-work · Jun 12, 9:00 AM · 📝 job prep"},
+  {title:"Team Task Manager — Ethara AI Assessment",meta:"Kai-work · Jun 10, 4:22 PM · 🏗 building"},
+  {title:"ML System Design Interview Prep",meta:"Kai-study · Jun 9, 7:30 PM · 🎯 interview prep"},
+  {title:"Ooty 5-Day Trip Planner",meta:"Kai-personal · Jun 8, 8:15 PM · 💡 planning"},
+  {title:"LangChain Agent Tool-Calling Patterns",meta:"Kai-study · Jun 7, 3:00 PM · 📚 learning"},
+  {title:"Speech Emotion Analysis — NLP + CNN",meta:"Kai-personal · Jun 5, 5:45 PM · 💡 brainstorming"}
+];
+
+const memoryIndex=[
+  {idx:0,hints:["rag","flask","chroma","langraph","self heal","retriev","vector","confidence","pipeline","groq"]},
+  {idx:1,hints:["tts","audio","latency","sarvam","labassist","delay","sound","chunked","session","streaming"]},
+  {idx:2,hints:["resume","ats","neural arc","job","developer","bullets","experience","internship","portfolio"]},
+  {idx:3,hints:["node","express","postgres","task manager","ethara","deploy","render","assessment","backend"]},
+  {idx:4,hints:["interview","system design","ml","vector db","embedding","trade off","machine learning"]},
+  {idx:5,hints:["trip","ooty","travel","hotel","budget","itinerary","days","stay","plan"]},
+  {idx:6,hints:["langchain","agent","tool","react","openai","function","calling","schema","python"]},
+  {idx:7,hints:["speech","emotion","nlp","cnn","feature","mfcc","dataset","audio","classification","portfolio"]}
+];
+
+const dateMap={
+  today:['today'],yesterday:['yesterday'],
+  week:['today','yesterday','jun12','jun10','jun9','jun8','jun7'],
+  month:['today','yesterday','jun12','jun10','jun9','jun8','jun7','jun5'],
+  jun12:['jun12'],jun10:['jun10'],jun9:['jun9'],
+  jun8:['jun8'],jun7:['jun7'],jun5:['jun5']
+};
+
+// ── CODE CANVAS DATA ──────────────────────────────────
+// Each chat can have zero or one "primary" snippet with a version history.
+const codeCanvas={
+  0:{
+    name:"rag_pipeline.py",
+    versions:[
+      {v:1,summary:"Conditional re-query when confidence drops below 0.65",code:`def should_requery(state):
+    if state["confidence"] < 0.65:
+        return "expand_query"
+    return "generate"
+
+graph.add_conditional_edges(
+    "retrieve", should_requery
+)`},
+      {v:2,summary:"Dedup expanded results via a seen_ids set",code:`def expand_query_node(state):
+    expanded = rephrase_query(state["query"])
+    new_docs = retriever.get_relevant_documents(expanded)
+    fresh = [d for d in new_docs
+             if d.metadata["id"] not in state["seen_ids"]]
+    state["seen_ids"].update(d.metadata["id"] for d in fresh)
+    state["docs"] += fresh
+    return state`},
+      {v:3,summary:"Flask SSE streaming endpoint for the graph",code:`from flask import Response, stream_with_context
+
+@app.route("/query", methods=["POST"])
+def query():
+    data = request.json
+    def generate():
+        for chunk in graph.stream({"query": data["q"]}):
+            yield f"data: {chunk}\\n\\n"
+    return Response(stream_with_context(generate()),
+                    mimetype="text/event-stream")`}
+    ]
+  },
+  1:{
+    name:"tts_stream.py",
+    versions:[
+      {v:1,summary:"Initial sequential TTS fetch (slow, blocking)",code:`for chunk in text_chunks:
+    audio = tts_client.synthesize(chunk)
+    play(audio)`},
+      {v:2,summary:"Chunked parallel fetch with a persistent Session()",code:`session = requests.Session()
+with ThreadPoolExecutor(max_workers=4) as pool:
+    futures = [pool.submit(fetch_audio, session, c) for c in chunks]
+    for f in as_completed(futures):
+        play(f.result())`}
+    ]
+  },
+  2:{
+    name:"resume_bullets.md",
+    versions:[
+      {v:1,summary:"Drafted initial bullet points",code:`- Built RAG pipelines using LangChain & ChromaDB
+- Reduced inference latency by 40% via batching`},
+      {v:2,summary:"Tailored bullets for Neural Arc internship",code:`- Designed and deployed a self-healing RAG pipeline (LangGraph, ChromaDB)
+- Cut TTS latency 40% with chunked parallel streaming (Sarvam AI)
+- Shipped production Flask APIs serving 10k+ daily requests`}
+    ]
+  },
+  3:{
+    name:"task_manager_api.js",
+    versions:[
+      {v:1,summary:"Basic CRUD routes for tasks",code:`router.get('/tasks', getTasks);
+router.post('/tasks', createTask);
+router.put('/tasks/:id', updateTask);
+router.delete('/tasks/:id', deleteTask);`},
+      {v:2,summary:"Added team-based auth middleware",code:`router.use(authenticate);
+router.use('/tasks', requireTeamMembership);`},
+      {v:3,summary:"PostgreSQL connection pooling",code:`const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10
+});`},
+      {v:4,summary:"Render deployment config",code:`# render.yaml
+services:
+  - type: web
+    name: task-manager-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js`},
+      {v:5,summary:"Fixed CORS for frontend origin on Render",code:`app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true
+}));`}
+    ]
+  },
+  6:{
+    name:"agent_tools.py",
+    versions:[
+      {v:1,summary:"Custom tool schema for OpenAI functions",code:`tools = [{
+  "name": "search_docs",
+  "description": "Search the knowledge base",
+  "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}
+}]`},
+      {v:2,summary:"Switched to a ReAct-style agent loop",code:`while not done:
+    thought = llm.invoke(prompt)
+    if "Action:" in thought:
+        result = run_tool(parse_action(thought))
+        prompt += f"\\nObservation: {result}"`}
+    ]
+  },
+  7:{
+    name:"emotion_cnn.py",
+    versions:[
+      {v:1,summary:"MFCC feature extraction pipeline",code:`mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)`}
+    ]
+  }
+};
+
+let activeTab='all', activeDateFilter=null, activeSearch='';
+let inChatOpen=false, matchNodes=[], matchIdx=0;
+let currentChatIdx=0;
+let lastBotHadCode=true;          // tracks whether the previous bot message contained code
+let topicStarted={0:true};        // tracks whether the "➕ new topic" chip has been shown per chat
+
+// ── PORTABLE MEMORY TOKEN — state ──────────────────────
+const LONG_CHAT_THRESHOLD=6;      // nudge to start a new chat after this many messages
+let msgCountPerChat={0:7};        // chat 0 is pre-seeded with its rendered history
+let tokenDismissed={};            // per-chat: user said "keep going", don't nudge again this session
+let extractedFactsPerChat={       // simulates the background fact-extraction ChatOS already does per chat
+  0:[
+    {icon:"🧩",text:"Building a self-healing RAG pipeline: Flask + ChromaDB + LangGraph, re-queries when retrieval confidence drops below 0.65."},
+    {icon:"🛠",text:"Dedup strategy: track a seen_ids set in graph state to avoid re-merging already-retrieved chunks."},
+    {icon:"🌐",text:"Exposed the pipeline via a Flask SSE endpoint using stream_with_context, consumed on the frontend with EventSource."}
+  ],
+  3:[
+    {icon:"🧩",text:"Team Task Manager API — Node.js + Express + PostgreSQL, deployed on Render for the Ethara AI assessment."},
+    {icon:"🔐",text:"Added team-based auth middleware before exposing the /tasks routes."},
+    {icon:"🐘",text:"Using a pooled PostgreSQL connection (max 10) via the pg Pool client."},
+    {icon:"🌍",text:"CORS fixed to allow only the deployed FRONTEND_URL origin, with credentials enabled."}
+  ]
+};
+
+function bumpMsgCount(idx){
+  msgCountPerChat[idx]=(msgCountPerChat[idx]||0)+1;
+  maybeShowTokenNudge(idx);
+}
+
+function maybeShowTokenNudge(idx){
+  const nudge=document.getElementById('token-nudge');
+  const count=msgCountPerChat[idx]||0;
+  if(count>=LONG_CHAT_THRESHOLD && !tokenDismissed[idx]){
+    nudge.classList.add('show');
+  } else {
+    nudge.classList.remove('show');
+  }
+}
+
+function dismissTokenNudge(){
+  tokenDismissed[currentChatIdx]=true;
+  document.getElementById('token-nudge').classList.remove('show');
+}
+
+// Builds a short, human-readable fact list for the current chat.
+// In production this is the same background extraction pipeline that
+// already powers the DNA pills + memory search — here it's simulated
+// from a small lookup, falling back to a generic placeholder fact set.
+function getFactsForChat(idx){
+  return extractedFactsPerChat[idx] || [
+    {icon:"🧩",text:chats[idx]?.title?`Working on: ${chats[idx].title}`:"General conversation context"},
+    {icon:"📌",text:"A few more turns of conversation captured as structured facts here."}
+  ];
+}
+
+function makeTokenId(idx){
+  // Deterministic-looking short hash, just for the demo
+  const base=(chats[idx]?.title||'chat')+'-'+(msgCountPerChat[idx]||0);
+  let h=0;for(let i=0;i<base.length;i++){h=(h*31+base.charCodeAt(i))>>>0;}
+  return 'MEM-'+h.toString(16).slice(0,6);
+}
+
+function openTokenModal(){
+  const idx=currentChatIdx;
+  const facts=getFactsForChat(idx);
+  const factsWrap=document.getElementById('token-facts');
+  factsWrap.innerHTML=facts.map(f=>
+    `<div class="token-fact"><span class="tf-icon">${f.icon}</span><span>${escapeHtml(f.text)}</span></div>`
+  ).join('');
+
+  const tokenId=makeTokenId(idx);
+  document.getElementById('token-box').dataset.token=tokenId;
+  document.getElementById('token-box').textContent=`${tokenId} · ${facts.length} facts packed · ready to paste into a new chat`;
+  document.getElementById('token-copy-btn').innerHTML='📋 Copy token';
+
+  document.getElementById('token-modal').classList.add('show');
+}
+function closeTokenModal(){
+  document.getElementById('token-modal').classList.remove('show');
+}
+function copyToken(){
+  const tokenId=document.getElementById('token-box').dataset.token||'MEM-000000';
+  const btn=document.getElementById('token-copy-btn');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(tokenId).catch(()=>{});
+  }
+  btn.innerHTML='✓ Copied!';
+  setTimeout(()=>{btn.innerHTML='📋 Copy token';},1800);
+}
+
+// Pasting a token into a "fresh" chat: pulls the matching facts back in
+// and shows the confirmation banner — this is the "continue elsewhere,
+// or hand it to someone else to continue independently" half of the loop.
+function applyPastedToken(){
+  const input=document.getElementById('ptr-input');
+  const val=input.value.trim();
+  if(!val)return;
+
+  // Find which chat this token was generated from (demo lookup by id)
+  let matchedIdx=null;
+  for(const idx in extractedFactsPerChat){
+    if(makeTokenId(idx)===val){matchedIdx=idx;break;}
+  }
+
+  const banner=document.getElementById('context-loaded-banner');
+  const bannerText=document.getElementById('context-loaded-text');
+  if(matchedIdx!==null){
+    const facts=getFactsForChat(matchedIdx);
+    bannerText.textContent=`Context loaded from "${chats[matchedIdx].title}" — ${facts.length} facts carried over. You can ask new questions and I'll answer using everything from that conversation.`;
+  } else {
+    bannerText.textContent=`Token not recognised in this demo, but in production any valid token would load its facts here — try one from the "Get my token" flow.`;
+  }
+  banner.classList.add('show');
+  document.getElementById('paste-token-row').classList.remove('show');
+  input.value='';
+}
+
+// ── GLOBAL SEARCH ─────────────────────────────────────
+function handleGlobalSearch(q){
+  activeSearch=q.trim().toLowerCase();
+  applyFilters();
+}
+
+// ── DATE FILTER ───────────────────────────────────────
+function toggleDateDropdown(){
+  const d=document.getElementById('date-dropdown');
+  d.classList.toggle('show');
+}
+function closeDropdown(){
+  document.getElementById('date-dropdown').classList.remove('show');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.global-search-wrap'))closeDropdown();
+});
+
+function applyDateFilter(key,el){
+  activeDateFilter=key;
+  document.querySelectorAll('.dd-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  const labels={today:'Today',yesterday:'Yesterday',week:'Last 7 days',month:'Last 30 days',jun12:'Jun 12',jun10:'Jun 10',jun9:'Jun 9',jun8:'Jun 8',jun7:'Jun 7',jun5:'Jun 5'};
+  document.getElementById('date-btn-label').textContent='· '+labels[key];
+  document.getElementById('date-filter-btn').classList.add('active');
+  applyFilters();
+  showActiveFilters();
+  closeDropdown();
+}
+
+function applyCustomDate(){
+  const v=document.getElementById('custom-date-input').value.trim().toLowerCase();
+  if(!v)return;
+  let key=null;
+  if(v.includes('today'))key='today';
+  else if(v.includes('yesterday'))key='yesterday';
+  else if(v.includes('week'))key='week';
+  else if(v.includes('month'))key='month';
+  else if(v.includes('jun 5')||v.includes('jun5')||v.includes('5:45')||v.includes('june 5'))key='jun5';
+  else if(v.includes('jun 7')||v.includes('jun7')||v.includes('june 7'))key='jun7';
+  else if(v.includes('jun 8')||v.includes('jun8')||v.includes('june 8'))key='jun8';
+  else if(v.includes('jun 9')||v.includes('jun9')||v.includes('june 9'))key='jun9';
+  else if(v.includes('jun 10')||v.includes('jun10')||v.includes('june 10')||v.includes('4:22'))key='jun10';
+  else if(v.includes('jun 12')||v.includes('jun12')||v.includes('june 12'))key='jun12';
+  if(key){
+    activeDateFilter=key;
+    document.getElementById('date-btn-label').textContent='· '+v;
+    document.getElementById('date-filter-btn').classList.add('active');
+    applyFilters();showActiveFilters();closeDropdown();
+  } else {
+    document.getElementById('custom-date-input').style.borderColor='var(--coral)';
+    setTimeout(()=>document.getElementById('custom-date-input').style.borderColor='',1500);
+  }
+}
+
+function clearDateFilter(){
+  activeDateFilter=null;
+  document.querySelectorAll('.dd-chip').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('date-btn-label').textContent='';
+  document.getElementById('date-filter-btn').classList.remove('active');
+  document.getElementById('custom-date-input').value='';
+  applyFilters();showActiveFilters();closeDropdown();
+}
+
+// ── COMBINED FILTER ───────────────────────────────────
+function applyFilters(){
+  const cards=document.querySelectorAll('.chat-card');
+  let vis=0;
+  cards.forEach(c=>{
+    const acct=c.dataset.account;
+    const dateKey=c.dataset.date;
+    const kw=c.dataset.keywords||'';
+    const sumEl=c.querySelector('.card-summary');
+    const orig=sumEl.dataset.orig||(sumEl.dataset.orig=sumEl.textContent);
+
+    const tabOk=activeTab==='all'||acct===activeTab;
+    const dateOk=!activeDateFilter||(dateMap[activeDateFilter]||[]).includes(dateKey);
+    const words=activeSearch?activeSearch.split(' ').filter(Boolean):[];
+    const searchOk=!activeSearch||words.some(w=>kw.includes(w)||orig.toLowerCase().includes(w));
+
+    const show=tabOk&&dateOk&&searchOk;
+    c.style.display=show?'':'none';
+    c.classList.remove('highlighted');
+
+    if(show){
+      vis++;
+      if(activeSearch&&words.length){
+        c.classList.add('highlighted');
+        let html=orig;
+        words.forEach(w=>{const re=new RegExp(`(${w})`,'gi');html=html.replace(re,'<mark>$1</mark>');});
+        sumEl.innerHTML=html;
+      } else {
+        sumEl.innerHTML=orig;
+      }
+    }
+  });
+  document.getElementById('chat-count').textContent=vis+' chat'+(vis!==1?'s':'');
+  document.getElementById('no-results').style.display=vis===0?'block':'none';
+}
+
+function filterTab(acct,el){
+  activeTab=acct;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function showActiveFilters(){
+  const wrap=document.getElementById('active-filters');
+  wrap.innerHTML='';
+  if(activeDateFilter){
+    const labels={today:'Today',yesterday:'Yesterday',week:'Last 7 days',month:'Last 30 days',jun12:'Jun 12',jun10:'Jun 10',jun9:'Jun 9',jun8:'Jun 8',jun7:'Jun 7',jun5:'Jun 5'};
+    wrap.innerHTML=`<span class="filter-tag">📅 ${labels[activeDateFilter]||activeDateFilter}<button onclick="clearDateFilter()">✕</button></span>`;
+  }
+}
+
+// ── IN-CHAT SEARCH ────────────────────────────────────
+function toggleInChatSearch(){
+  inChatOpen=!inChatOpen;
+  const bar=document.getElementById('inchat-bar');
+  const btn=document.getElementById('ics-toggle');
+  if(inChatOpen){
+    bar.style.display='flex';
+    btn.classList.add('active-btn');
+    document.getElementById('ics-input').focus();
+  } else {
+    closeInChatSearch();
+  }
+}
+
+function closeInChatSearch(){
+  inChatOpen=false;
+  document.getElementById('inchat-bar').style.display='none';
+  document.getElementById('ics-toggle').classList.remove('active-btn');
+  document.getElementById('ics-input').value='';
+  clearChatHighlights();
+  matchNodes=[];matchIdx=0;
+  document.getElementById('ics-count').textContent='0 / 0';
+}
+
+function searchInChat(q){
+  clearChatHighlights();
+  matchNodes=[];matchIdx=0;
+  if(!q.trim()){document.getElementById('ics-count').textContent='0 / 0';return;}
+  const term=q.trim().toLowerCase();
+  const bubbles=document.querySelectorAll('#messages .bubble');
+  bubbles.forEach(b=>{
+    const text=b.textContent;
+    if(text.toLowerCase().includes(term)){
+      const orig=b.dataset.orig||(b.dataset.orig=b.innerHTML);
+      const re=new RegExp(`(${term})`,'gi');
+      b.innerHTML=orig.replace(re,'<mark class="green-mark">$1</mark>');
+      matchNodes.push(b.closest('.msg'));
+    }
+  });
+  document.getElementById('ics-count').textContent=matchNodes.length>0?`1 / ${matchNodes.length}`:`0 / 0`;
+  if(matchNodes.length>0){matchIdx=0;scrollToMatch();}
+}
+
+function clearChatHighlights(){
+  document.querySelectorAll('#messages .bubble').forEach(b=>{
+    if(b.dataset.orig)b.innerHTML=b.dataset.orig;
+  });
+}
+
+function navMatch(dir){
+  if(!matchNodes.length)return;
+  matchNodes[matchIdx].classList.remove('msg-highlight');
+  matchIdx=(matchIdx+dir+matchNodes.length)%matchNodes.length;
+  scrollToMatch();
+  document.getElementById('ics-count').textContent=`${matchIdx+1} / ${matchNodes.length}`;
+}
+
+function scrollToMatch(){
+  if(!matchNodes[matchIdx])return;
+  matchNodes[matchIdx].classList.add('msg-highlight');
+  matchNodes[matchIdx].scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ── MEMORY SEARCH ─────────────────────────────────────
+function toggleMemoryPanel(){
+  const p=document.getElementById('memory-panel');
+  const btn=document.getElementById('memory-toggle-btn');
+  const show=p.classList.toggle('show');
+  btn.classList.toggle('active-btn',show);
+  if(show)document.getElementById('memory-input').focus();
+}
+
+function runMemorySearch(){
+  const q=document.getElementById('memory-input').value.trim().toLowerCase();
+  const res=document.getElementById('mp-results');
+  res.innerHTML='';
+  if(!q){res.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0">Type something you remember about the conversation…</div>';return;}
+  const words=q.split(' ').filter(Boolean);
+  const scored=memoryIndex.map(entry=>{
+    const score=words.reduce((s,w)=>s+(entry.hints.some(h=>h.includes(w)||w.includes(h))?1:0),0);
+    return{...entry,score};
+  }).filter(e=>e.score>0).sort((a,b)=>b.score-a.score).slice(0,4);
+
+  if(!scored.length){
+    res.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0">🔭 Nothing found. Try different words — e.g. "audio fix", "resume bullets", "node deploy".</div>';
+    return;
+  }
+  scored.forEach(e=>{
+    const c=chats[e.idx];
+    const matchedHints=memoryIndex[e.idx].hints.filter(h=>words.some(w=>h.includes(w)||w.includes(h))).slice(0,3);
+    const div=document.createElement('div');
+    div.className='mp-result';
+    div.innerHTML=`<div class="mp-result-title">${c.title}</div>
+      <div class="mp-result-match">Matched: ${matchedHints.join(', ')}</div>
+      <div class="mp-result-meta">${c.meta}</div>`;
+    div.onclick=()=>{loadChat(e.idx);};
+    res.appendChild(div);
+  });
+}
+
+// ── CODE CANVAS ───────────────────────────────────────
+function updateCanvasButton(idx){
+  const btn=document.getElementById('canvas-toggle');
+  const badge=document.getElementById('canvas-count-badge');
+  const data=codeCanvas[idx];
+  if(data){
+    btn.style.display='';
+    badge.textContent=data.versions.length;
+  } else {
+    btn.style.display='none';
+    closeCanvas();
+  }
+}
+
+function toggleCanvas(){
+  const panel=document.getElementById('canvas-panel');
+  const data=codeCanvas[currentChatIdx];
+  if(!data)return;
+  const isShowing=panel.classList.contains('show');
+  if(isShowing){
+    closeCanvas();
+  } else {
+    renderCanvas(currentChatIdx, data.versions[data.versions.length-1].v);
+    panel.classList.add('show');
+  }
+}
+
+function closeCanvas(){
+  document.getElementById('canvas-panel').classList.remove('show');
+}
+
+function openCanvasVersion(chatIdx,v){
+  const panel=document.getElementById('canvas-panel');
+  renderCanvas(chatIdx,v);
+  panel.classList.add('show');
+}
+
+function renderCanvas(chatIdx,selectedV){
+  const data=codeCanvas[chatIdx];
+  if(!data)return;
+  document.getElementById('canvas-name').textContent=data.name;
+  document.getElementById('canvas-count-badge').textContent=data.versions.length;
+
+  const vWrap=document.getElementById('canvas-versions');
+  vWrap.innerHTML='';
+  data.versions.forEach(ver=>{
+    const div=document.createElement('div');
+    div.className='canvas-version-item';
+    div.id=`cv-${chatIdx}-${ver.v}`;
+    div.innerHTML=`<div class="cv-top"><span>🔄 v${ver.v}</span></div><div class="cv-summary">${ver.summary}</div>`;
+    div.onclick=()=>selectCanvasVersion(chatIdx,ver.v);
+    vWrap.appendChild(div);
+  });
+
+  selectCanvasVersion(chatIdx,selectedV);
+}
+
+function selectCanvasVersion(chatIdx,v){
+  const data=codeCanvas[chatIdx];
+  const ver=data.versions.find(x=>x.v===v);
+  if(!ver)return;
+
+  document.querySelectorAll('.canvas-version-item').forEach(el=>el.classList.remove('active','flash'));
+  const target=document.getElementById(`cv-${chatIdx}-${v}`);
+  if(target){
+    target.classList.add('active');
+    target.scrollIntoView({behavior:'smooth',block:'nearest'});
+    requestAnimationFrame(()=>target.classList.add('flash'));
+  }
+
+  document.getElementById('canvas-code-meta').textContent=`v${ver.v} — ${ver.summary}`;
+  document.getElementById('canvas-code').textContent=ver.code;
+}
+
+function updateRevisionBadge(idx){
+  const card=[...document.querySelectorAll('.chat-card')][idx];
+  if(!card)return;
+  const pill=card.querySelector('.revision-badge');
+  const n=codeCanvas[idx].versions.length;
+  if(pill)pill.textContent=`🔄 ${n} revision${n!==1?'s':''}`;
+}
+
+function renderRevisionBadges(){
+  document.querySelectorAll('.chat-card').forEach((card,i)=>{
+    const data=codeCanvas[i];
+    if(!data)return;
+    const bar=card.querySelector('.dna-bar');
+    const n=data.versions.length;
+    const pill=document.createElement('span');
+    pill.className='dna-pill revision-badge';
+    pill.textContent=`🔄 ${n} revision${n!==1?'s':''}`;
+    bar.appendChild(pill);
+  });
+}
+
+// ── LOAD CHAT ─────────────────────────────────────────
+function loadChat(i){
+  document.querySelectorAll('.chat-card').forEach(c=>c.classList.remove('active'));
+  const cards=[...document.querySelectorAll('.chat-card')];
+  cards[i].classList.add('active');
+  document.getElementById('chat-title').textContent=chats[i].title;
+  document.getElementById('chat-meta').textContent=chats[i].meta;
+  closeInChatSearch();
+  document.getElementById('memory-panel').classList.remove('show');
+  document.getElementById('memory-toggle-btn').classList.remove('active-btn');
+  document.getElementById('context-loaded-banner').classList.remove('show');
+
+  currentChatIdx=i;
+  lastBotHadCode=(i===0); // only chat 0 has its full message history rendered, ending on a code reply
+  if(!(i in topicStarted))topicStarted[i]=false;
+  if(!(i in msgCountPerChat))msgCountPerChat[i]=0;
+  updateCanvasButton(i);
+  maybeShowTokenNudge(i);
+
+  // Show the "paste a token" entry only on a genuinely fresh/empty chat
+  const ptr=document.getElementById('paste-token-row');
+  if(msgCountPerChat[i]===0){ptr.classList.add('show');} else {ptr.classList.remove('show');}
+}
+
+function resumeChat(){loadChat(1);document.getElementById('nudge').style.display='none';}
+
+// ── MODAL ─────────────────────────────────────────────
+function openModal(){document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function toggleTag(el){
+  el.classList.toggle('selected');el.classList.toggle('unselected');
+  el.style.borderColor=el.classList.contains('selected')?el.style.color:'#444c56';
+}
+function saveConversation(){
+  closeModal();
+  const btn=document.querySelector('.save-btn');
+  btn.innerHTML='✓ Saved!';btn.style.background='var(--green)';
+  setTimeout(()=>{btn.innerHTML='💾 Save &amp; Tag';btn.style.background='';},2000);
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── SEND MSG ──────────────────────────────────────────
+function sendMsg(){
+  const inp=document.getElementById('msg-input');
+  const t=inp.value.trim();if(!t)return;inp.value='';
+  const lower=t.toLowerCase();
+  const msgs=document.getElementById('messages');
+
+  // Determine an intent chip for this user message
+  let intentHtml='';
+  if(/revert|undo|go back/.test(lower)){
+    intentHtml='<div class="intent-chip intent-revert">↩️ revert request</div>';
+  } else if(lastBotHadCode && /(error|bug|doesn'?t work|not working|broken|fails?|crash)/.test(lower)){
+    intentHtml='<div class="intent-chip intent-bug">🐛 bug report</div>';
+  } else if(!topicStarted[currentChatIdx] && /(code|build|implement|create|write|snippet|function)/.test(lower)){
+    intentHtml='<div class="intent-chip intent-new">➕ new topic</div>';
+    topicStarted[currentChatIdx]=true;
+  }
+
+  const um=document.createElement('div');
+  um.className='msg user';
+  um.innerHTML=`<div class="msg-row"><div class="msg-avatar avatar-user">K</div><div class="bubble">${escapeHtml(t)}</div></div>${intentHtml}`;
+  msgs.appendChild(um);
+  bumpMsgCount(currentChatIdx);
+
+  const tm=document.createElement('div');
+  tm.className='msg bot';
+  tm.innerHTML=`<div class="msg-avatar avatar-claude">C</div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(tm);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  setTimeout(()=>{
+    const bubble=tm.querySelector('.bubble');
+    const data=codeCanvas[currentChatIdx];
+
+    if(/(error|bug|doesn'?t work|not working|broken|fails?|crash)/.test(lower) && lastBotHadCode && data){
+      // Bug report on a chat with an existing snippet → new patched version
+      const lastVer=data.versions[data.versions.length-1];
+      const newV=lastVer.v+1;
+      const newVer={
+        v:newV,
+        summary:"Hotfix based on reported issue",
+        code:`# patch v${newV} — addresses: "${t.length>40?t.slice(0,40)+'…':t}"\n`+lastVer.code+`\n\n# TODO: confirm fix resolves the reported issue`
+      };
+      data.versions.push(newVer);
+      bubble.innerHTML=`Good catch — I've patched that and saved it as a new version:<pre>${escapeHtml(newVer.code)}</pre><div class="version-chip" onclick="openCanvasVersion(${currentChatIdx},${newV})">🔄 v${newV}</div>`;
+      lastBotHadCode=true;
+      updateCanvasButton(currentChatIdx);
+      updateRevisionBadge(currentChatIdx);
+      if(document.getElementById('canvas-panel').classList.contains('show')){
+        renderCanvas(currentChatIdx,newV);
+      }
+    } else if(/revert|undo|go back/.test(lower) && data && data.versions.length>1){
+      const prev=data.versions[data.versions.length-2];
+      bubble.innerHTML=`Reverted to <strong>v${prev.v}</strong> — ${escapeHtml(prev.summary)}:<pre>${escapeHtml(prev.code)}</pre><div class="version-chip" onclick="openCanvasVersion(${currentChatIdx},${prev.v})">🔄 v${prev.v}</div>`;
+      lastBotHadCode=true;
+    } else {
+      bubble.textContent=lower.includes('error')||lower.includes('bug')
+        ?'Looks like a runtime issue — check your environment variables and make sure the service is running on the correct port. Share the traceback and I can pinpoint the exact line.'
+        :'Got it! I can help you build that out. Want me to start with the architecture overview or jump straight to the implementation?';
+      lastBotHadCode=false;
+    }
+    msgs.scrollTop=msgs.scrollHeight;
+  },1100);
+}
+
+// ── INIT ──────────────────────────────────────────────
+renderRevisionBadges();
+updateCanvasButton(currentChatIdx);
+maybeShowTokenNudge(currentChatIdx);
+</script>
+</body>
+</html>

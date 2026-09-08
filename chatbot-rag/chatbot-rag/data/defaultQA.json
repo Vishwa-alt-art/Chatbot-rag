@@ -1,0 +1,146 @@
+{
+  "_readme": "Add your own Q&A pairs here. 'questions' is a list of phrasings that should all trigger the same answer. Matching is case-insensitive and checks if the user's message contains any of the listed phrases.",
+
+  "faqs": [
+    {
+      "id": "bot_identity",
+      "questions": [
+        "who are you",
+        "what are you",
+        "are you a bot",
+        "are you human",
+        "are you an ai",
+        "what kind of assistant",
+        "how you got trained",
+        "how were you trained",
+        "who made you",
+        "who created you",
+        "what is your work",
+        "what do you do",
+        "what can you do",
+        "what are your capabilities",
+        "how can you help",
+        "what are you capable of"
+      ],
+      "answer": "🤖 I'm an A I -powered store assistant. I can help you with:\n\n🔹 Products — prices, stock, categories\n🔹 Customers — details, order history, spending\n🔹 Orders — status, history per customer\n🔹 Warehouse — inventory by location\n🔹 Store info — return policy, shipping, payments, warranty\n🔹 General questions — factual topics like science, technology, etc.\n\nTry asking: 'Show all products', 'Orders of John Doe', or 'What is machine learning?'"
+    },
+    {
+      "id": "business_hours",
+      "questions": [
+        "business hours",
+        "working hours",
+        "when are you open",
+        "opening hours",
+        "what time do you open",
+        "what time do you close"
+      ],
+      "answer": "🕐 Our business hours are Monday to Friday, 9 AM to 6 PM (IST). We're closed on weekends and public holidays."
+    },
+    {
+      "id": "return_policy",
+      "questions": [
+        "return policy",
+        "can i return",
+        "refund policy",
+        "how to return",
+        "return an item",
+        "exchange policy"
+      ],
+      "answer": "🔄 We accept returns within 30 days of purchase. Items must be in original condition with receipt. Refunds are processed within 5 to 7 business days."
+    },
+    {
+      "id": "shipping_info",
+      "questions": [
+        "shipping",
+        "delivery time",
+        "how long does delivery",
+        "when will my order arrive",
+        "shipping policy",
+        "free shipping"
+      ],
+      "answer": "🚚 Standard delivery takes 3 to 5 business days. Free shipping on orders above ₹999. Express delivery (1 to 2 days) is available at extra cost."
+    },
+    {
+      "id": "payment_methods",
+      "questions": [
+        "payment methods",
+        "how can i pay",
+        "accepted payments",
+        "do you accept credit card",
+        "upi",
+        "cash on delivery",
+        "cod available"
+      ],
+      "answer": "💳 We accept Credit,Debit cards, UPI, Net Banking, and Cash on Delivery for eligible orders."
+    },
+    {
+      "id": "contact_support",
+      "questions": [
+        "contact support",
+        "customer support",
+        "how to contact",
+        "support email",
+        "help desk",
+        "raise a complaint",
+        "phone number"
+      ],
+      "answer": "📞 You can reach our support team at support @ your company.com or call us at +91-XXXXXXXXXX. We respond within 24 hours."
+    },
+    {
+      "id": "warranty",
+      "questions": [
+        "warranty",
+        "guarantee",
+        "product warranty",
+        "how long is the warranty"
+      ],
+      "answer": "🛡️ All electronics come with a 1-year manufacturer warranty. Accessories carry a 6-month warranty. Contact support for warranty claims."
+    },
+    {
+      "id": "discount_offers",
+      "questions": [
+        "discount",
+        "offers",
+        "coupon",
+        "promo code",
+        "sale",
+        "any deals",
+        "special offer"
+      ],
+      "answer": "🎉 Check our website for current offers! New users get 10% offer on their first order. Subscribe to our newsletter for exclusive deals."
+    },
+    {
+      "id": "track_order",
+      "questions": [
+        "track my order",
+        "order tracking",
+        "where is my order",
+        "track order"
+      ],
+      "answer": "📦 To track your order, visit the 'My Orders' section on our website or app and enter your Order ID. You can also ask me: 'Order details of [your name]'."
+    },
+    {
+      "id": "about_company",
+      "questions": [
+        "about your company",
+        "about this shop",
+        "what is this store",
+        "tell me about your company",
+        "about this company",
+        "about this store"
+      ],
+      "answer": "🏪 We are a technology products retailer specialising in electronics and accessories. We carry laptops, monitors, keyboards, mice, cables, and more — all at competitive prices."
+    },
+    {
+      "id": "bulk_order",
+      "questions": [
+        "bulk order",
+        "wholesale",
+        "bulk purchase",
+        "corporate order",
+        "b2b"
+      ],
+      "answer": "📋 For bulk or corporate orders, please contact our B2B team at bulk@yourcompany.com. We offer special pricing for orders of 10+ units."
+    }
+  ]
+}

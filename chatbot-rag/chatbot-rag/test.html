@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store Assistant — Voice + RAG</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:       #f0f4ff;
+  --surface:  #ffffff;
+  --card:     #f5f7ff;
+  --border:   rgba(99,102,241,0.13);
+  --border-h: rgba(99,102,241,0.32);
+  --text:     #1e1b4b;
+  --muted:    #7c7fa8;
+  --soft:     #a5b4fc;
+  --accent:   #6366f1;
+  --accent2:  #8b5cf6;
+  --green:    #059669;
+  --orange:   #ea580c;
+  --red:      #dc2626;
+  --radius:   22px;
+  --font:     'DM Sans', sans-serif;
+}
+
+html, body {
+  height: 100%; font-family: var(--font);
+  color: var(--text); overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 0%   0%,   #c7d2fe 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 0%,   #bbf7d0 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50%  100%, #fde68a 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80%  60%,  #fecdd3 0%, transparent 50%),
+    #f0f4ff;
+}
+
+.shell {
+  width: 100%; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+.chat-wrap {
+  width: 92%; max-width: 860px; height: 92vh;
+  background: rgba(255,255,255,0.78);
+  backdrop-filter: blur(28px);
+  border-radius: var(--radius);
+  border: 1.5px solid rgba(255,255,255,0.92);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow:
+    0 8px 40px rgba(99,102,241,0.13),
+    0 2px 8px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* HEADER */
+.hdr {
+  padding: 14px 20px;
+  border-bottom: 1.5px solid rgba(99,102,241,0.09);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg,rgba(224,231,255,0.7),rgba(236,253,245,0.5));
+}
+.hdr-icon {
+  width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; box-shadow: 0 4px 14px rgba(99,102,241,0.38);
+}
+.hdr-info .title { font-size: 14px; font-weight: 700; }
+.hdr-info .sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.dot-row { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; }
+.dot { width: 7px; height: 7px; border-radius: 50%; animation: pulse 2s infinite; }
+.dot.green  { background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.22); color: #059669; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.badge {
+  font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  border: 1px solid; display: flex; align-items: center; gap: 5px;
+}
+.badge.voice { border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.08); color:#6366f1; }
+
+/* MESSAGES */
+.msgs {
+  flex: 1; overflow-y: auto;
+  padding: 18px 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.msgs::-webkit-scrollbar { width: 5px; }
+.msgs::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.18); border-radius: 3px; }
+
+.msg { display: flex; gap: 10px; animation: up 0.22s ease; }
+@keyframes up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.msg.user { flex-direction: row-reverse; }
+
+.av {
+  width: 33px; height: 33px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; margin-top: 2px;
+}
+.av-bot  { background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; box-shadow:0 3px 10px rgba(99,102,241,0.35); }
+.av-user { background: linear-gradient(135deg,#f43f5e,#ec4899); color:#fff; box-shadow:0 3px 10px rgba(244,63,94,0.3); }
+
+.bwrap { display: flex; flex-direction: column; gap: 5px; max-width: 78%; }
+.msg.user .bwrap { align-items: flex-end; }
+
+.src-tag {
+  font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 999px;
+  width: fit-content; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.t-rag    { background:#d1fae5; color:#065f46; }
+.t-static { background:#ede9fe; color:#7c3aed; }
+.t-web    { background:#ffedd5; color:#c2410c; }
+.t-all    { background:#e0e7ff; color:#4338ca; }
+.t-voice  { background:#fce7f3; color:#9d174d; }
+
+.bubble {
+  padding: 10px 14px; border-radius: 18px;
+  font-size: 13px; line-height: 1.7; word-break: break-word;
+}
+.msg.user .bubble {
+  background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff;
+  border-bottom-right-radius: 5px;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.28);
+}
+.msg.bot .bubble {
+  background: #fff; color: #1e1b4b;
+  border: 1.5px solid rgba(99,102,241,0.13);
+  border-bottom-left-radius: 5px;
+  box-shadow: 0 3px 14px rgba(99,102,241,0.07);
+  white-space: pre-wrap;
+}
+.msg.bot .bubble strong { color: #6366f1; }
+
+/* PLAY BUTTON */
+.speak-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 2px 4px; animation: up 0.2s ease;
+}
+.play-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px; cursor: pointer;
+  border: 1.5px solid rgba(99,102,241,0.22);
+  background: rgba(99,102,241,0.06); color: #6366f1;
+  font-size: 11.5px; font-weight: 600; font-family: var(--font);
+  transition: all 0.18s; white-space: nowrap; flex-shrink: 0;
+}
+.play-btn:hover  { background: rgba(99,102,241,0.13); border-color: rgba(99,102,241,0.4); }
+.play-btn.playing {
+  background: rgba(99,102,241,0.15); border-color: #6366f1; color: #4338ca;
+  animation: playPulse 1.6s ease-in-out infinite;
+}
+.play-btn.paused { background:rgba(234,179,8,0.1); border-color:#eab308; color:#92400e; }
+@keyframes playPulse {
+  0%,100% { box-shadow: 0 0 0 0   rgba(99,102,241,0.35); }
+  50%     { box-shadow: 0 0 0 6px rgba(99,102,241,0);    }
+}
+.speak-bar {
+  flex: 1; max-width: 110px; height: 3px;
+  background: rgba(99,102,241,0.15); border-radius: 4px; overflow: hidden;
+  display: none;
+}
+.speak-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg,#6366f1,#8b5cf6);
+  border-radius: 4px; transition: width 0.3s linear;
+}
+.play-btn.playing ~ .speak-bar,
+.play-btn.paused  ~ .speak-bar { display: block; }
+
+/* CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.layer-chip {
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  border: 2px solid; background: transparent;
+  font-family: var(--font); display: flex; align-items: center; gap: 7px;
+  transition: all 0.18s;
+}
+.lc-s { border-color:#c4b5fd; color:#7c3aed; background:#faf5ff; }
+.lc-s:hover { background:#ede9fe; border-color:#7c3aed; box-shadow:0 4px 14px rgba(124,58,237,0.18); transform:translateY(-1px); }
+.lc-d { border-color:#6ee7b7; color:#059669; background:#f0fdf4; }
+.lc-d:hover { background:#d1fae5; border-color:#059669; box-shadow:0 4px 14px rgba(5,150,105,0.18); transform:translateY(-1px); }
+.lc-w { border-color:#fdba74; color:#ea580c; background:#fff7ed; }
+.lc-w:hover { background:#ffedd5; border-color:#ea580c; box-shadow:0 4px 14px rgba(234,88,12,0.18); transform:translateY(-1px); }
+.q-chip {
+  padding: 5px 13px; border-radius: 999px; cursor: pointer;
+  font-size: 11.5px; font-weight: 500; font-family: var(--font);
+  border: 1.5px solid rgba(99,102,241,0.2);
+  background: #f5f7ff; color: #6366f1; transition: all 0.15s;
+}
+.q-chip:hover { transform:translateY(-1px); box-shadow:0 3px 10px rgba(99,102,241,0.14); }
+.q-chip.cs { border-color:#c4b5fd; color:#7c3aed; background:#faf5ff; }
+.q-chip.cd { border-color:#6ee7b7; color:#059669; background:#f0fdf4; }
+.q-chip.cw { border-color:#fdba74; color:#ea580c; background:#fff7ed; }
+.ldot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ds { background:#7c3aed; } .dd { background:#059669; } .dw { background:#ea580c; }
+
+/* TYPING */
+.typing {
+  background:#fff; border:1.5px solid rgba(99,102,241,0.13);
+  border-radius:18px; border-bottom-left-radius:5px;
+  padding:12px 16px; display:flex; gap:5px; align-items:center;
+  box-shadow:0 3px 12px rgba(99,102,241,0.07);
+}
+.typing span { width:7px; height:7px; border-radius:50%; animation:bl 1.1s infinite ease-in-out; }
+.typing span:nth-child(1){background:#6366f1;animation-delay:0s;}
+.typing span:nth-child(2){background:#8b5cf6;animation-delay:.18s;}
+.typing span:nth-child(3){background:#ec4899;animation-delay:.36s;}
+@keyframes bl{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1.1);opacity:1}}
+
+.divider {
+  display:flex; align-items:center; gap:10px;
+  color:var(--muted); font-size:10.5px; font-weight:600;
+  letter-spacing:0.07em; text-transform:uppercase;
+}
+.divider::before,.divider::after {
+  content:''; flex:1; height:1.5px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);
+}
+
+/* INPUT BAR */
+.input-bar {
+  padding: 12px 15px 14px;
+  border-top: 1.5px solid rgba(99,102,241,0.09);
+  display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+  background: linear-gradient(135deg,rgba(224,231,255,0.4),rgba(236,253,245,0.3));
+}
+.chat-input {
+  flex: 1; background: #fff;
+  border: 1.5px solid rgba(99,102,241,0.18); border-radius: 14px;
+  padding: 10px 14px; color: var(--text); font-family: var(--font); font-size: 13px;
+  outline: none; resize: none;
+  max-height: 110px; min-height: 42px; line-height: 1.5;
+  transition: all 0.2s; box-shadow: 0 2px 8px rgba(99,102,241,0.05);
+}
+.chat-input::placeholder { color:#a5b4fc; }
+.chat-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.11), 0 2px 8px rgba(99,102,241,0.09);
+}
+.mic-btn {
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+  border: 1.5px solid rgba(99,102,241,0.22);
+  background: rgba(99,102,241,0.07);
+  color: #6366f1; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; position: relative;
+}
+.mic-btn:hover { background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.4); transform: translateY(-1px); }
+.mic-btn.rec {
+  background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.4);
+  color: #dc2626; animation: recPulse 1s ease-out infinite;
+}
+@keyframes recPulse {
+  0%   { box-shadow: 0 0 0 0   rgba(220,38,38,0.45); }
+  100% { box-shadow: 0 0 0 10px rgba(220,38,38,0);   }
+}
+.mic-btn.proc {
+  background: rgba(234,179,8,0.1); border-color: rgba(234,179,8,0.4);
+  color: #b45309; cursor: not-allowed;
+  animation: procSpin 1s linear infinite;
+}
+@keyframes procSpin { to { transform: rotate(360deg); } }
+.mic-btn::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 7px); left: 50%;
+  transform: translateX(-50%);
+  background: #1e1b4b; color: #fff;
+  font-size: 10px; font-weight: 600; font-family: var(--font);
+  padding: 4px 10px; border-radius: 8px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.18s;
+}
+.mic-btn:hover::after { opacity: 1; }
+.send-btn {
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  border: none; color: #fff; font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; box-shadow: 0 4px 14px rgba(99,102,241,0.38);
+}
+.send-btn:hover   { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 20px rgba(99,102,241,0.48); }
+.send-btn:active  { transform: scale(0.95); }
+.send-btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.send-btn svg     { width:16px; height:16px; fill:#fff; }
+.input-hint { font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+.transcript-pill {
+  font-size: 11px; font-style: italic; color: #7c3aed;
+  padding: 3px 11px; border-radius: 20px;
+  background: rgba(124,58,237,0.07);
+  border: 1px solid rgba(124,58,237,0.16);
+  width: fit-content;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="chat-wrap">
+
+  <div class="hdr">
+    <div class="hdr-icon">🤖</div>
+    <div class="hdr-info">
+      <div class="title">Store Assistant</div>
+      <div class="sub">RAG · MySQL · Live Website · Voice Enabled</div>
+    </div>
+    <div class="hdr-right">
+      <div class="dot-row"><div class="dot green"></div><span style="color:#059669">RAG Online</span></div>
+      <div class="badge voice">🎙️ Voice Ready</div>
+    </div>
+  </div>
+
+  <div class="msgs" id="msgs"></div>
+
+  <div class="input-bar">
+    <textarea
+      class="chat-input" id="chatInput" rows="1"
+      placeholder="Ask anything — products, orders, policies, or tap 🎙️ to speak…"
+      onkeydown="onKey(event)"
+      oninput="resize(this)"
+    ></textarea>
+    <button class="mic-btn" id="micBtn" data-tip="Tap to speak" onclick="toggleMic()">🎙️</button>
+    <button class="send-btn" id="sendBtn" onclick="sendMsg()" title="Send">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="input-hint">Enter to send · Shift+Enter for newline · 🎙️ voice input</div>
+
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+const RAG_URL = 'http://localhost:3000/api/chat/ask';
+const STT_URL = 'http://localhost:5000/transcribe';
+const SID = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+let currentLayer = 'all';
+
+// ══════════════════════════════════════════════════════════════
+// VOICE SETUP — female, human-like, no emoji
+// ══════════════════════════════════════════════════════════════
+let femaleVoice = null;
+
+// Load voices — browser loads them async on first call
+function loadVoices() {
+  const all = window.speechSynthesis.getVoices();
+  if (!all.length) return;
+
+  // Priority list: best female en-IN / en voices
+  const preferred = [
+    'Microsoft Neerja Online (Natural) - English (India)',
+    'Microsoft Neerja - English (India)',
+    'Google हिन्दी',
+    'Microsoft Zira - English (United States)',
+    'Microsoft Hazel - English (Great Britain)',
+    'Google UK English Female',
+    'Google US English',
+  ];
+
+  // Try preferred names first
+  for (const name of preferred) {
+    const v = all.find(v => v.name === name);
+    if (v) { femaleVoice = v; break; }
+  }
+
+  // Fallback: any female en-IN voice
+  if (!femaleVoice) {
+    femaleVoice = all.find(v =>
+      v.lang === 'en-IN' &&
+      (v.name.toLowerCase().includes('female') ||
+       v.name.toLowerCase().includes('woman') ||
+       v.name.toLowerCase().includes('neerja') ||
+       v.name.toLowerCase().includes('priya'))
+    );
+  }
+
+  // Fallback: any female English voice
+  if (!femaleVoice) {
+    femaleVoice = all.find(v =>
+      v.lang.startsWith('en') &&
+      (v.name.toLowerCase().includes('zira') ||
+       v.name.toLowerCase().includes('hazel') ||
+       v.name.toLowerCase().includes('female') ||
+       v.name.toLowerCase().includes('woman'))
+    );
+  }
+
+  // Last resort: first en-IN voice available
+  if (!femaleVoice) {
+    femaleVoice = all.find(v => v.lang === 'en-IN') || null;
+  }
+
+  console.log('Voice selected:', femaleVoice?.name || 'browser default');
+}
+
+// Voices may load late — listen for the event
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+// Strip emoji and clean text before speaking — makes it human-like
+function cleanForSpeech(text) {
+  return text
+    // Remove all emoji unicode ranges
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+    .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+    .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
+    .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
+    .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
+    .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+    .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
+    .replace(/[\u{2600}-\u{26FF}]/gu,   '')
+    .replace(/[\u{2700}-\u{27BF}]/gu,   '')
+    .replace(/[\u{FE00}-\u{FE0F}]/gu,   '')
+    // Remove bullet symbols
+    .replace(/[•·▶⏸▸►]/g, '')
+    // Remove markdown bold/italic stars
+    .replace(/\*\*/g, '').replace(/\*/g, '')
+    // Replace numbered lists "1." with natural pause
+    .replace(/^\d+\.\s+/gm, '')
+    // Clean up extra whitespace
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+// Build a human-like utterance
+function buildUtt(text) {
+  const cleaned = cleanForSpeech(text);
+  const utt     = new SpeechSynthesisUtterance(cleaned);
+
+  // Female voice if found
+  if (femaleVoice) utt.voice = femaleVoice;
+
+  // Human-like settings
+  utt.lang   = 'en-IN';
+  utt.rate   = 0.92;   // slightly slower than default (1.0) — more natural
+  utt.pitch  = 1.1;    // slightly higher pitch — sounds more female/warm
+  utt.volume = 1.0;
+
+  return utt;
+}
+
+// ══════════════════════════════════════════════════════════════
+// LAYER DATA
+// ══════════════════════════════════════════════════════════════
+const LAYER_META = {
+  all:    { cls:'t-all',    label:'All Layers'  },
+  static: { cls:'t-static', label:'Static Q&A'  },
+  db:     { cls:'t-rag',    label:'Database'    },
+  web:    { cls:'t-web',    label:'Website'     },
+};
+const LAYER_QS = {
+  static: ['What is your return policy?','What are your business hours?','What payment methods do you accept?','How can I track my order?','Is there a warranty?'],
+  db:     ['Show all products','Which customer spent the most?','List all delivered orders','What products are in Warehouse A?','Show me all customers'],
+  web:    ['What does NeuralArc do?','What services does NeuralArc offer?','Tell me about the IoT services','How can I contact NeuralArc?'],
+};
+const FOLLOWUPS = {
+  static: ['What about shipping costs?','Can I exchange a product?','Do you have a loyalty program?'],
+  db:     ['Show orders for that customer','Which products are out of stock?','Who placed the most orders?'],
+  web:    ['What tech stack do you use?','Tell me about the mobile app service'],
+  all:    [],
+};
+
+// ══════════════════════════════════════════════════════════════
+// DOM HELPERS
+// ══════════════════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const mk = (tag, cls) => { const e=document.createElement(tag); if(cls) e.className=cls; return e; };
+const scroll = () => { const m=$('msgs'); m.scrollTop=m.scrollHeight; };
+
+function resize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+function onKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+
+// ══════════════════════════════════════════════════════════════
+// TYPING INDICATOR
+// ══════════════════════════════════════════════════════════════
+function showTyping() {
+  const wrap=mk('div','msg bot'); wrap.id='typing';
+  const av=mk('div','av av-bot'); av.textContent='🤖';
+  const bw=mk('div','bwrap');
+  const t=mk('div','typing'); t.innerHTML='<span></span><span></span><span></span>';
+  bw.appendChild(t); wrap.appendChild(av); wrap.appendChild(bw);
+  $('msgs').appendChild(wrap); scroll();
+}
+function hideTyping() { const t=$('typing'); if(t) t.remove(); }
+
+// ══════════════════════════════════════════════════════════════
+// ADD USER MESSAGE
+// ══════════════════════════════════════════════════════════════
+function addUser(text) {
+  const wrap=mk('div','msg user');
+  const av=mk('div','av av-user'); av.textContent='You';
+  const bw=mk('div','bwrap');
+  const b=mk('div','bubble'); b.textContent=text;
+  bw.appendChild(b); wrap.appendChild(av); wrap.appendChild(bw);
+  $('msgs').appendChild(wrap); scroll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GLOBAL TTS STATE
+// ══════════════════════════════════════════════════════════════
+let activeSpeakBtn = null;
+let activeUtt      = null;
+
+function stopAllSpeech() {
+  window.speechSynthesis.cancel();
+  if (activeSpeakBtn) { _resetBtn(activeSpeakBtn); activeSpeakBtn=null; }
+  activeUtt = null;
+}
+function _resetBtn(btn) {
+  btn.classList.remove('playing','paused');
+  btn.innerHTML = '▶ Play';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ADD BOT MESSAGE — with Play/Pause/Resume button
+// ══════════════════════════════════════════════════════════════
+function addBot(answerText, layer, chips, transcriptText) {
+  const meta = LAYER_META[layer] || LAYER_META.all;
+  const wrap = mk('div','msg bot');
+  const av   = mk('div','av av-bot'); av.textContent='🤖';
+  const bw   = mk('div','bwrap');
+
+  const tag = mk('span','src-tag '+meta.cls);
+  tag.textContent = meta.label;
+  bw.appendChild(tag);
+
+  if (transcriptText) {
+    const pill = mk('div','transcript-pill');
+    pill.textContent = '🎙️ "' + transcriptText + '"';
+    bw.appendChild(pill);
+  }
+
+  const bubble = mk('div','bubble');
+  bubble.textContent = answerText;
+  bw.appendChild(bubble);
+
+  // Play/Pause/Resume button
+  const speakRow = mk('div','speak-row');
+  const btn      = mk('button','play-btn'); btn.innerHTML='▶ Play';
+  const bar      = mk('div','speak-bar');
+  const fill     = mk('div','speak-bar-fill'); fill.style.width='0%';
+  bar.appendChild(fill);
+
+  let state = 'idle';
+  let timer = null;
+
+  function startBar() {
+    let pct=0; clearInterval(timer);
+    const ms   = Math.max(3000,(answerText.length/140)*1000);
+    const step = 100/(ms/100);
+    timer = setInterval(()=>{ if(state!=='playing') return; pct=Math.min(pct+step,95); fill.style.width=pct+'%'; },100);
+  }
+  function finishBar() {
+    clearInterval(timer); fill.style.width='100%';
+    setTimeout(()=>{ fill.style.width='0%'; bar.style.display='none'; },700);
+  }
+
+  function speak() {
+    stopAllSpeech();
+    const utt  = buildUtt(answerText);   // <-- uses female voice + clean text
+    activeUtt  = utt; activeSpeakBtn=btn; state='playing';
+    btn.classList.add('playing'); btn.innerHTML='⏸ Pause';
+    startBar();
+    utt.onend = utt.onerror = () => {
+      state='idle'; _resetBtn(btn); finishBar();
+      activeSpeakBtn=null; activeUtt=null;
+    };
+    utt.onpause  = () => { state='paused'; btn.classList.remove('playing'); btn.classList.add('paused'); btn.innerHTML='▶ Resume'; clearInterval(timer); };
+    utt.onresume = () => { state='playing'; btn.classList.remove('paused'); btn.classList.add('playing'); btn.innerHTML='⏸ Pause'; startBar(); };
+    window.speechSynthesis.speak(utt);
+  }
+
+  btn.onclick = () => {
+    if      (state==='idle')    speak();
+    else if (state==='playing') window.speechSynthesis.pause();
+    else                        window.speechSynthesis.resume();
+  };
+
+  speakRow.appendChild(btn);
+  speakRow.appendChild(bar);
+  bw.appendChild(speakRow);
+
+  if (chips && chips.length) {
+    const row = mk('div','chips');
+    chips.forEach(txt => {
+      const cls=layer==='static'?'cs':layer==='db'?'cd':layer==='web'?'cw':'';
+      const c=mk('button','q-chip '+cls); c.textContent=txt;
+      c.onclick=()=>quickSend(txt); row.appendChild(c);
+    });
+    bw.appendChild(row);
+  }
+
+  wrap.appendChild(av); wrap.appendChild(bw);
+  $('msgs').appendChild(wrap); scroll();
+
+  // Auto-play if from voice
+  if (transcriptText) setTimeout(()=>btn.click(),300);
+}
+
+function addDivider(txt) {
+  const d=mk('div','divider'); d.textContent=txt;
+  $('msgs').appendChild(d); scroll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// addBotHTML — for welcome / layer pick messages
+// ══════════════════════════════════════════════════════════════
+function addBotHTML(html, layer, chips) {
+  const meta=LAYER_META[layer]||LAYER_META.all;
+  const wrap=mk('div','msg bot');
+  const av=mk('div','av av-bot'); av.textContent='🤖';
+  const bw=mk('div','bwrap');
+  const tag=mk('span','src-tag '+meta.cls); tag.textContent=meta.label;
+  bw.appendChild(tag);
+  const bubble=mk('div','bubble'); bubble.innerHTML=html;
+  bw.appendChild(bubble);
+
+  const plainText = bubble.textContent;
+  const speakRow=mk('div','speak-row');
+  const btn=mk('button','play-btn'); btn.innerHTML='▶ Play';
+  const bar=mk('div','speak-bar');
+  const fill=mk('div','speak-bar-fill'); fill.style.width='0%';
+  bar.appendChild(fill); speakRow.appendChild(btn); speakRow.appendChild(bar);
+
+  let state='idle';
+  btn.onclick = ()=>{
+    if (state==='idle') {
+      stopAllSpeech();
+      const utt=buildUtt(plainText);   // <-- female + clean
+      activeUtt=utt; activeSpeakBtn=btn; state='playing';
+      btn.classList.add('playing'); btn.innerHTML='⏸ Pause';
+      utt.onend=utt.onerror=()=>{ state='idle'; _resetBtn(btn); activeSpeakBtn=null; };
+      utt.onpause=()=>{ state='paused'; btn.classList.remove('playing'); btn.classList.add('paused'); btn.innerHTML='▶ Resume'; };
+      utt.onresume=()=>{ state='playing'; btn.classList.remove('paused'); btn.classList.add('playing'); btn.innerHTML='⏸ Pause'; };
+      window.speechSynthesis.speak(utt);
+    } else if(state==='playing') { window.speechSynthesis.pause(); }
+    else { window.speechSynthesis.resume(); }
+  };
+  bw.appendChild(speakRow);
+
+  if (chips && chips.length) {
+    const row=mk('div','chips');
+    chips.forEach(txt=>{
+      const cls=layer==='static'?'cs':layer==='db'?'cd':layer==='web'?'cw':'';
+      const c=mk('button','q-chip '+cls); c.textContent=txt;
+      c.onclick=()=>quickSend(txt); row.appendChild(c);
+    });
+    bw.appendChild(row);
+  }
+  wrap.appendChild(av); wrap.appendChild(bw);
+  $('msgs').appendChild(wrap); scroll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SEND TEXT MESSAGE → RAG
+// ══════════════════════════════════════════════════════════════
+async function sendMsg(override, transcriptText) {
+  const input=$('chatInput');
+  const q=override!==undefined?override:input.value.trim();
+  if (!q) return;
+  input.value=''; resize(input);
+  $('sendBtn').disabled=true;
+  stopAllSpeech();
+  addUser(transcriptText?'🎙️ '+transcriptText:q);
+  showTyping();
+  try {
+    const res=await fetch(RAG_URL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:q, session_id:SID, layer:currentLayer}),
+    });
+    const data=await res.json();
+    hideTyping();
+    if (data.success) {
+      const ans  = data.data.answer;
+      const src  = data.data.context_used?.source||currentLayer;
+      const disp = src==='default_qa'||src==='general_knowledge'?'static'
+                 : src==='website_live'?'web'
+                 : currentLayer==='all'?'all':currentLayer;
+      const fu   = currentLayer!=='all'
+        ?(FOLLOWUPS[currentLayer]||[]).slice().sort(()=>Math.random()-0.5).slice(0,3):[];
+      addBot(ans, disp, fu, transcriptText||null);
+    } else {
+      addBot('Sorry, something went wrong. Please try again.', currentLayer, null, null);
+    }
+  } catch(err) {
+    hideTyping();
+    addBot('⚠️ '+err.message+' — is the RAG server running on port 3000?','all',null,null);
+  } finally {
+    $('sendBtn').disabled=false;
+    $('chatInput').focus();
+  }
+}
+
+function quickSend(q) { sendMsg(q); }
+
+// ══════════════════════════════════════════════════════════════
+// MIC — voice input
+// Records → POST /transcribe (Flask :5000) → get transcript
+// → sendMsg(transcript) → RAG answers → auto-play with female voice
+// ══════════════════════════════════════════════════════════════
+let recording=false, mediaRec=null, audioChunks=[];
+
+async function toggleMic() {
+  const btn=$('micBtn');
+  if (!recording) {
+    try {
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRec=new MediaRecorder(stream); audioChunks=[];
+      mediaRec.ondataavailable=e=>audioChunks.push(e.data);
+      mediaRec.onstop=async()=>{
+        btn.classList.remove('rec'); btn.classList.add('proc');
+        btn.textContent='⏳'; btn.dataset.tip='Transcribing…'; btn.disabled=true;
+        const blob=new Blob(audioChunks,{type:'audio/wav'});
+        const fd=new FormData(); fd.append('audio',blob,'voice.wav');
+        try {
+          const res=await fetch(STT_URL,{method:'POST',body:fd});
+          const data=await res.json();
+          if (data.success&&data.transcript) {
+            await sendMsg(data.transcript, data.transcript);
+          } else {
+            addBot('❌ '+(data.error||'No speech detected. Please try again.'),'all',null,null);
+          }
+        } catch(err) {
+          addBot('⚠️ STT server offline — is app.py running on port 5000?','all',null,null);
+        }
+        btn.classList.remove('proc'); btn.textContent='🎙️';
+        btn.dataset.tip='Tap to speak'; btn.disabled=false;
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      mediaRec.start(); recording=true;
+      btn.classList.add('rec'); btn.textContent='⏹'; btn.dataset.tip='Tap to stop';
+    } catch(err) {
+      addBot('❌ Microphone access denied. Allow mic in browser settings.','all',null,null);
+    }
+  } else {
+    if (mediaRec&&mediaRec.state!=='inactive') mediaRec.stop();
+    recording=false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LAYER SELECTOR
+// ══════════════════════════════════════════════════════════════
+function pickLayer(l) {
+  currentLayer=l;
+  const name=l==='static'?'Static Q&A':l==='db'?'Database':'Website';
+  const desc={
+    static:'Answering from <strong>defaultQA.json</strong> — policies, hours, payment, FAQs.',
+    db:    'Querying <strong>MySQL</strong> — products, orders, customers, inventory.',
+    web:   'Fetching live content from <strong>neuralarc.com</strong>.',
+  }[l];
+  addDivider(name+' selected');
+  addBotHTML(`✅ <strong>${name}</strong> selected. ${desc}<br><br>Some things you can ask:`,l,LAYER_QS[l]);
+}
+
+// ══════════════════════════════════════════════════════════════
+// WELCOME
+// ══════════════════════════════════════════════════════════════
+function renderWelcome() {
+  const wrap=mk('div','msg bot');
+  const av=mk('div','av av-bot'); av.textContent='🤖';
+  const bw=mk('div','bwrap');
+  const tag=mk('span','src-tag t-all'); tag.textContent='All Layers';
+  bw.appendChild(tag);
+  const bubble=mk('div','bubble');
+  bubble.innerHTML=
+    '👋 Hello! I\'m your Store Assistant.<br><br>'+
+    '📦 Ask me about <strong>products, orders, customers, warehouse</strong> — or company info.<br>'+
+    '🎙️ Tap the <strong>mic button</strong> to ask by voice. I\'ll read the answer aloud.<br><br>'+
+    'Pick a layer to focus my search, or just type your question:';
+  bw.appendChild(bubble);
+  const row=mk('div','chips');
+  [{key:'static',label:'Static Q&A',cls:'lc-s',d:'ds'},
+   {key:'db',    label:'Database',  cls:'lc-d',d:'dd'},
+   {key:'web',   label:'Website',   cls:'lc-w',d:'dw'}
+  ].forEach(l=>{
+    const c=mk('button','layer-chip '+l.cls);
+    const dot=mk('span','ldot '+l.d); c.appendChild(dot);
+    c.appendChild(document.createTextNode(l.label));
+    c.onclick=()=>pickLayer(l.key); row.appendChild(c);
+  });
+  bw.appendChild(row); wrap.appendChild(av); wrap.appendChild(bw);
+  $('msgs').appendChild(wrap); scroll();
+}
+
+window.onload=()=>{ renderWelcome(); $('chatInput').focus(); };
+</script>
+</body>
+</html>
